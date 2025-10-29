@@ -12,13 +12,14 @@ var lastScreenshot = null;
 var screenshotCanvas = null;
 var screenshotCtx = null;
 
-export function setApiKey(key)
+export async function setApiKey(key)
 {
 	client = new Anthropic({apiKey: key, dangerouslyAllowBrowser: true});
 	// Reset messages
 	messages = []
 	messageList.set(messages);
-	localStorage.setItem("anthropic-api-key", key);
+	const encrypted = await encryptApiKey(key);
+	localStorage.setItem("anthropic-api-key", encrypted);
 	apiState.set("READY");
 	tryPlausible("ClaudeAI Key");
 }
@@ -490,11 +491,16 @@ export async function handleToolImpl(tool, term)
 	}
 }
 
-function initialize()
+async function initialize()
 {
-	var savedApiKey = localStorage.getItem("anthropic-api-key");
-	if(savedApiKey)
-		setApiKey(savedApiKey);
+	var encryptedApiKey = localStorage.getItem("anthropic-api-key");
+	if(encryptedApiKey)
+		{
+			const decryptedApiKey = await decryptApiKey(encryptedApiKey);
+			if (decryptedApiKey) {
+				setApiKey(decryptedApiKey);
+			}
+		}
 }
 
 export const apiState = writable("KEY_REQUIRED");
@@ -503,5 +509,5 @@ export const currentMessage = writable("");
 export const displayConfig = writable(null);
 export const enableThinking = writable(false);
 
-if(browser)
+if (browser)
 	initialize();
